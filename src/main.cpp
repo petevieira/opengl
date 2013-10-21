@@ -8,16 +8,42 @@
 bool* keyStates = new bool[256]; // Create array of bools for key states (true=up/false=down)
 bool* keySpecialStates = new bool[256]; // Create array of bools for special key states (true=up/false=down)
 
+GLfloat redDiffuseMaterial[] = {1.0, 0.0, 0.0};
+GLfloat whiteSpecularMaterial[] = {1.0, 1.0, 1.0};
+GLfloat greenEmissiveMaterial[] = {0.0, 1.0, 0.0};
+GLfloat whiteSpecularLight[] = {1.0, 1.0, 1.0};
+GLfloat blackAmbientLight[] = {0.0, 0.0, 0.0};
+GLfloat whiteDiffuseLight[] = {1.0, 1.0, 1.0};
+GLfloat blankMaterial[] = {0.0, 0.0, 0.0};
+GLfloat mShininess[] = {128};
+bool diffuse = false;
+bool emissive = false;
+bool specular = false;
+
+GLuint texture;
+
 bool movingUp;
 float yLocation = 0.0f;
 float yRotAngle = 0.0f;
 
-void keyOperations(void)
+void _keyOperations(void)
 {
-    if(keyStates['a'])
-        std::cout << "Help" << std::endl;
-    if(keyStates['e'])
-        std::cout << "e" << std::endl;
+
+}
+
+void _mouse(int button, int state, int x, int y)
+{
+
+}
+
+void _motion(int x, int y)
+{
+
+}
+
+void _passiveMotion(int x, int y)
+{
+    std::cout << "(x,y) = " << x << ", " << y << std::endl;
 }
 
 void renderPrimitive(void)
@@ -34,31 +60,37 @@ void renderPrimitive(void)
     glEnd();
 }
 
-void display(void)
+void _init()
 {
-    keyOperations();
-    glClearColor(1.f, 0.f, 0.f, 1.f); // Make background red
-    glClear(GL_COLOR_BUFFER_BIT); // Clear the color buffer
+    glClearDepth(1);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_COLOR_MATERIAL);
+}
+
+void _lighting()
+{
+    glLightfv(GL_LIGHT0, GL_SPECULAR, whiteSpecularLight);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, blackAmbientLight);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuseLight);
+}
+
+void _display(void)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    _keyOperations();
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Make background red
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the color buffer
     glLoadIdentity(); // Load identity matrix to reset our drawing locations
-    glTranslatef(0.0f, 0.0f, -5.0f); // Move back 5 units
-    glTranslatef(0.0f, yLocation, 0.0f);
-    glRotatef(yRotAngle, 0.0f, 1.0f, 0.0f);
-    glutWireCube(2.0f);
-    glFlush(); // Flush the OpenGL buffers to the window
-
-    if(movingUp)
-        yLocation -= 0.005f;
-    else
-        yLocation += 0.005f;
-
-    if(yLocation < -3.0f)
-        movingUp = false;
-    else if(yLocation > 3.0f)
-        movingUp = true;
-
-    yRotAngle += 0.005f;
-    if(yRotAngle > 360.0f)
-        yRotAngle -= 0.005f;
+    // Camera center, aim at, up vector
+    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    glScalef(1.0, 1.0, 1.0);
+    glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
+    glutSolidCube(2.0f);
+    glutSwapBuffers(); // Swap OpenGL buffers and send to monitor
 }
 
 void reshape(int width, int height)
@@ -71,22 +103,63 @@ void reshape(int width, int height)
     glMatrixMode(GL_MODELVIEW); // Switch back to model view matrix to draw shapes correctly
 }
 
-void keyPressed(unsigned char key, int x, int y)
+void _keyPressed(unsigned char key, int x, int y)
 {
-    keyStates[key] = true;
+    // Toggle specularity
+    if(key == 's')
+    {
+        if(!specular)
+        {
+            specular = true;
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, whiteSpecularMaterial);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mShininess);
+        }
+        else if(specular)
+        {
+            specular = false;
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, blankMaterial);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, blankMaterial);
+        }
+    }
+    if(key == 'd')
+    {
+        if(!diffuse)
+        {
+            diffuse = true;
+            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, redDiffuseMaterial);
+        }
+        else if(diffuse)
+        {
+            diffuse = false;
+            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, blankMaterial);
+        }
+    }
+    if(key == 'e')
+    {
+        if(!emissive)
+        {
+            emissive = true;
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, greenEmissiveMaterial);
+        }
+        else if(emissive)
+        {
+            emissive = false;
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, blankMaterial);
+        }
+    }
 }
 
-void keyReleased(unsigned char key, int x, int y)
+void _keyReleased(unsigned char key, int x, int y)
 {
     keyStates[key] = false;
 }
 
-void keySpecialPressed(int key, int x, int y)
+void _keySpecialPressed(int key, int x, int y)
 {
     keySpecialStates[key] = true;
 }
 
-void keySpecialReleased(int key, int x, int y)
+void _keySpecialReleased(int key, int x, int y)
 {
     keySpecialStates[key] = false;
 }
@@ -94,18 +167,23 @@ void keySpecialReleased(int key, int x, int y)
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv); // Initialize GLUT
-    glutInitDisplayMode(GLUT_SINGLE); // Set up basic display buffer
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA); // Set up basic display buffer (double buffered)
     glutInitWindowSize(500, 500); // Set the width and height of the window
     glutInitWindowPosition(100, 100); // Set the position of the window
     glutCreateWindow("My first OpenGL window"); // Set title of the window
 
-    glutDisplayFunc(display); // Tell GLUT to use the display() function to dislay stuff
-    glutIdleFunc(display); // Tell GLUT to use the displa() function for the idle operations
+    _init();
+
+    glutDisplayFunc(_display); // Tell GLUT to use the display() function to dislay stuff
+    glutIdleFunc(_display); // Tell GLUT to use the displa() function for the idle operations
     glutReshapeFunc(reshape); // Tell GLUT to use the reshape function to reshape the window
-    glutKeyboardFunc(keyPressed); // Tell GLUT to use keyboard function for key presses
-    glutKeyboardUpFunc(keyReleased); // Tell GLUT to use keyUp function for key releases
-    glutSpecialFunc(keySpecialPressed); // Tell GLUT to use keySpecialPressed function for special key presses
-    glutSpecialUpFunc(keySpecialReleased); // Tell GLUT to use keySpecialReleased function for special key releases
+    glutKeyboardFunc(_keyPressed); // Tell GLUT to use keyboard function for key presses
+    glutKeyboardUpFunc(_keyReleased); // Tell GLUT to use keyUp function for key releases
+    glutSpecialFunc(_keySpecialPressed); // Tell GLUT to use keySpecialPressed function for special key presses
+    glutSpecialUpFunc(_keySpecialReleased); // Tell GLUT to use keySpecialReleased function for special key releases
+    glutMouseFunc(_mouse); // Tell GLUT to use _mouse() function for mouse events
+    glutMotionFunc(_motion); // Tell GLUT to use _motion() function for mouse motion events
+    glutPassiveMotionFunc(_passiveMotion);
 
 
     glutMainLoop(); // Main loop

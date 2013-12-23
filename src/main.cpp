@@ -4,6 +4,7 @@
 // C includes
 #include <iostream>
 
+double d[9] = {2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
 bool* keyStates = new bool[256]; // Create array of bools for key states (true=up/false=down)
 bool* keySpecialStates = new bool[256]; // Create array of bools for special key states (true=up/false=down)
@@ -43,7 +44,7 @@ void _motion(int x, int y)
 
 void _passiveMotion(int x, int y)
 {
-    std::cout << "(x,y) = " << x << ", " << y << std::endl;
+    d[2] += .01;
 }
 
 void renderPrimitive(void)
@@ -86,20 +87,22 @@ void _display(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the color buffer
     glLoadIdentity(); // Load identity matrix to reset our drawing locations
     // Camera center, aim at, up vector
-    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+//    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    gluLookAt(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
     glScalef(1.0, 1.0, 1.0);
     glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
     glutSolidCube(2.0f);
     glutSwapBuffers(); // Swap OpenGL buffers and send to monitor
 }
 
-void reshape(int width, int height)
+void _reshape(int width, int height)
 {
     glViewport(0, 0, (GLsizei)width, (GLsizei)height); // Set viewport to size of window
     glMatrixMode(GL_PROJECTION); // Switch to projection matrix so we can manipulate scene
     glLoadIdentity(); // Reset projection matrix to identity to avoid artifacts
     // Set field of view, aspect ratio and min and max distances to draw objects
     gluPerspective(60, (GLfloat)width/(GLfloat)height, 1.0, 100.0);
+    glTranslatef(.1,.1,.1);
     glMatrixMode(GL_MODELVIEW); // Switch back to model view matrix to draw shapes correctly
 }
 
@@ -174,16 +177,17 @@ int main(int argc, char** argv)
 
     _init();
 
-    glutDisplayFunc(_display); // Tell GLUT to use the display() function to dislay stuff
-    glutIdleFunc(_display); // Tell GLUT to use the displa() function for the idle operations
-    glutReshapeFunc(reshape); // Tell GLUT to use the reshape function to reshape the window
-    glutKeyboardFunc(_keyPressed); // Tell GLUT to use keyboard function for key presses
-    glutKeyboardUpFunc(_keyReleased); // Tell GLUT to use keyUp function for key releases
-    glutSpecialFunc(_keySpecialPressed); // Tell GLUT to use keySpecialPressed function for special key presses
-    glutSpecialUpFunc(_keySpecialReleased); // Tell GLUT to use keySpecialReleased function for special key releases
-    glutMouseFunc(_mouse); // Tell GLUT to use _mouse() function for mouse events
-    glutMotionFunc(_motion); // Tell GLUT to use _motion() function for mouse motion events
-    glutPassiveMotionFunc(_passiveMotion);
+	// Tell GLUT which member functions to use for each action
+    glutDisplayFunc(_display); // dislay stuff
+    glutIdleFunc(_display); // idle operations
+    glutReshapeFunc(_reshape); // reshape the window
+    glutKeyboardFunc(_keyPressed); // key presses
+    glutKeyboardUpFunc(_keyReleased); // key releases
+    glutSpecialFunc(_keySpecialPressed); // special key presses
+    glutSpecialUpFunc(_keySpecialReleased); // special key releases
+    glutMouseFunc(_mouse); // mouse events
+    glutMotionFunc(_motion); // mouse motion events
+    glutPassiveMotionFunc(_passiveMotion); // passive mouse motion events
 
 
     glutMainLoop(); // Main loop

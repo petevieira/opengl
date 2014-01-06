@@ -1,8 +1,11 @@
+// C includes
+#include <iostream
+// Eigen includes
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
 // OpenGL includes
 #include <GL/glew.h>
 #include <GL/glut.h>
-// C includes
-#include <iostream>
 
 double d[9] = {2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
@@ -23,6 +26,18 @@ bool specular = false;
 
 GLuint texture;
 
+
+typedef enum {
+	MOTION_NULL=0,
+	MOTION_ROTATE,
+	MOTION_PAN,
+	MOTION_ZOOM
+} motion_type_t;
+
+int origin_x = 0;
+int origin_y = 0;
+motion_type_t motion_type = MOTION_NULL;
+
 bool movingUp;
 float yLocation = 0.0f;
 float yRotAngle = 0.0f;
@@ -34,12 +49,55 @@ void _keyOperations(void)
 
 void _mouse(int button, int state, int x, int y)
 {
+	// If button pressed, get x,y and toggle motion type
+	if(GLUT_DOWN == state) {
+        origin_x = x;
+        origin_y = y;
+
+		switch(button) {
+		case GLUT_LEFT_BUTTON:
+			motion_type = MOTION_ROTATE;
+			break;
+		case GLUT_MIDDLE_BUTTON:
+			motion_type = MOTION_ZOOM;
+			break;
+		case GLUT_RIGHT_BUTTON:
+			motion_type = MOTION_PAN;
+			break;
+		}
+    }
+	else {
+		motion_type = MOTION_NULL;
+	}
+
+}
+
+/**
+ * Rotate scene on hemisphere. Project x,y coordinates
+ * onto hemisphere and then compute angle between the
+ * vectors and axis to rotate about and convert to
+ * quaternion. 
+ */
+void camera_rotate()
+{
+	Eigen
+
 
 }
 
 void _motion(int x, int y)
 {
-
+	switch(motion_type) {
+	case MOTION_ROTATE:
+	    camera_rotate();
+		break;
+	case MOTION_PAN:
+		camera_pan();
+		break;
+	case MOTION_ZOOM:
+		camera_zoom();
+		break;
+	}
 }
 
 void _passiveMotion(int x, int y)

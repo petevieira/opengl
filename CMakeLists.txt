@@ -23,7 +23,9 @@ endif(NOT OPENGL_FOUND)
 
 # Set libraries
 set(OPENGL_LIBRARIES glut GLU GL)
+include_directories("include")
 
 # Add executables
+add_library(glcamera "src/GlCamera.cpp" "include/GlCamera.h")
 add_executable(main "src/main.cpp")
 target_link_libraries(main ${OPENGL_LIBRARIES})

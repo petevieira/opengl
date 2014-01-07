@@ -1,11 +1,11 @@
 // C includes
-#include <iostream
+#include <iostream>
 // Eigen includes
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
 // OpenGL includes
 #include <GL/glew.h>
-#include <GL/glut.h>
+#include <GL/freeglut.h>
 
 double d[9] = {2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
@@ -78,10 +78,19 @@ void _mouse(int button, int state, int x, int y)
  * vectors and axis to rotate about and convert to
  * quaternion. 
  */
-void camera_rotate()
+void camera_rotate(int x, int y)
 {
-	Eigen
+    float r = 1;
+	Eigen::Quaternionf quat;
+	Eigen::Vector3f vec1, vec2, axis;
+	float angle;
+    vec1 << origin_x, origin_y, sqrt(r - (origin_x*origin_x) - (origin_y*origin_y));
+    vec2 << x, y, sqrt(r - (x*x) - (y*y));
+	axis = vec1.cross(vec2);
 
+	angle = axis.norm() / (vec1.norm() * vec2.norm());
+    quat.setFromTwoVectors(vec1, vec2);
+	
 
 }
 
@@ -89,20 +98,20 @@ void _motion(int x, int y)
 {
 	switch(motion_type) {
 	case MOTION_ROTATE:
-	    camera_rotate();
+	    camera_rotate(x, y);
 		break;
 	case MOTION_PAN:
-		camera_pan();
+//		camera_pan();
 		break;
 	case MOTION_ZOOM:
-		camera_zoom();
-		break;
+//		camera_zoom();
+        break;
 	}
 }
 
 void _passiveMotion(int x, int y)
 {
-    d[2] += .01;
+
 }
 
 void renderPrimitive(void)
@@ -166,48 +175,6 @@ void _reshape(int width, int height)
 
 void _keyPressed(unsigned char key, int x, int y)
 {
-    // Toggle specularity
-    if(key == 's')
-    {
-        if(!specular)
-        {
-            specular = true;
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, whiteSpecularMaterial);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mShininess);
-        }
-        else if(specular)
-        {
-            specular = false;
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, blankMaterial);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, blankMaterial);
-        }
-    }
-    if(key == 'd')
-    {
-        if(!diffuse)
-        {
-            diffuse = true;
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, redDiffuseMaterial);
-        }
-        else if(diffuse)
-        {
-            diffuse = false;
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, blankMaterial);
-        }
-    }
-    if(key == 'e')
-    {
-        if(!emissive)
-        {
-            emissive = true;
-            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, greenEmissiveMaterial);
-        }
-        else if(emissive)
-        {
-            emissive = false;
-            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, blankMaterial);
-        }
-    }
 }
 
 void _keyReleased(unsigned char key, int x, int y)
@@ -246,7 +213,6 @@ int main(int argc, char** argv)
     glutMouseFunc(_mouse); // mouse events
     glutMotionFunc(_motion); // mouse motion events
     glutPassiveMotionFunc(_passiveMotion); // passive mouse motion events
-
 
     glutMainLoop(); // Main loop
 }

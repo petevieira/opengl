@@ -2,6 +2,9 @@
 #ifndef GLCAMERA_H
 #define GLCAMERA_H
 
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
+
 class GlCamera
 {
 public:
@@ -14,6 +17,8 @@ public:
      */
     void camera_rotate(int x, int y);
 
+
+    Eigen::Vector3f mouse_origin;
 };
 
 #endif // GLCAMERA_H

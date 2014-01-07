@@ -1,5 +1,6 @@
 // C includes
 #include <iostream>
+#include <stdio.h>
 // Eigen includes
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
@@ -56,17 +57,21 @@ void _mouse(int button, int state, int x, int y)
 
 		switch(button) {
 		case GLUT_LEFT_BUTTON:
+            std::cerr << "now in rotate mode\n";
 			motion_type = MOTION_ROTATE;
 			break;
+            std::cerr << "now in zoom mode\n";
 		case GLUT_MIDDLE_BUTTON:
 			motion_type = MOTION_ZOOM;
 			break;
-		case GLUT_RIGHT_BUTTON:
+        case GLUT_RIGHT_BUTTON:
+            std::cerr << "now in pan mode\n";
 			motion_type = MOTION_PAN;
 			break;
 		}
     }
 	else {
+        std::cerr << "not in a mouse mode\n";
 		motion_type = MOTION_NULL;
 	}
 
@@ -80,16 +85,35 @@ void _mouse(int button, int state, int x, int y)
  */
 void camera_rotate(int x, int y)
 {
-    float r = 1;
-	Eigen::Quaternionf quat;
-	Eigen::Vector3f vec1, vec2, axis;
-	float angle;
-    vec1 << origin_x, origin_y, sqrt(r - (origin_x*origin_x) - (origin_y*origin_y));
-    vec2 << x, y, sqrt(r - (x*x) - (y*y));
-	axis = vec1.cross(vec2);
+    GLfloat winSize[4];
+    glGetFloatv(GL_VIEWPORT, winSize);
+    printf("win size: %f, %f, %f, %f\n", winSize[0], winSize[1], winSize[2], winSize[3]);
+    printf("origin: %d, %d\n", origin_x, origin_y);
+    printf("curren: %d, %d\n", x, y);
 
-	angle = axis.norm() / (vec1.norm() * vec2.norm());
-    quat.setFromTwoVectors(vec1, vec2);
+    float r = sqrt(winSize[2]*winSize[2] + winSize[3]*winSize[3]);
+    Eigen::Vector3f cur, origin;
+    cur.x() = x - winSize[2]/2;
+    cur.y() = y - winSize[3]/2;
+    cur.z() = sqrt(r - cur.x()*cur.x() - cur.y()*cur.y());
+
+    origin.x() = origin_x - winSize[2]/2;
+    origin.y() = origin_y - winSize[3]/3;
+    origin.z() = sqrt(r - origin.x()*origin.x() - origin.y()*origin.y());
+
+    std::cerr << "   r: " << r
+              << "\norig: " << origin.transpose()
+              << " \ncur: " << cur.transpose() << std::endl;
+
+    Eigen::Quaternionf quat;
+    Eigen::Vector3f axis;
+	float angle;
+    axis = origin.cross(cur);
+
+    angle = axis.norm() / (origin.norm() * cur.norm());
+    quat.setFromTwoVectors(origin, cur);
+    std::cerr << "angle-axis: " << angle << ", " << axis.transpose() << std::endl;
+    std::cerr << "quat      : " << quat.vec() << std::endl;
 	
 
 }
@@ -98,6 +122,7 @@ void _motion(int x, int y)
 {
 	switch(motion_type) {
 	case MOTION_ROTATE:
+        std::cerr << "Rotating view\n";
 	    camera_rotate(x, y);
 		break;
 	case MOTION_PAN:
@@ -175,6 +200,10 @@ void _reshape(int width, int height)
 
 void _keyPressed(unsigned char key, int x, int y)
 {
+    if(27 == key) { // escape key
+        glutDestroyWindow(glutGetWindow());
+        exit(0);
+    }
 }
 
 void _keyReleased(unsigned char key, int x, int y)

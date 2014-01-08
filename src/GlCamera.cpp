@@ -1,5 +1,6 @@
 #include "GlCamera.h"
 
+GlCamera::GlCamera(){}
 
     /**
      * Rotate scene on hemisphere. Project x,y coordinates
@@ -21,3 +22,15 @@
 
 
 //    }
+
+void GlCamera::pan(float x, float y, float z)
+{
+    glMatrixMode(GL_MODELVIEW);
+    glTranslatef(x, y, z);
+    glutPostRedisplay();
+}
+
+void GlCamera::pan(const Eigen::Vector3f& p)
+{
+
+}

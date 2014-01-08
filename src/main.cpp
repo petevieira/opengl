@@ -7,6 +7,7 @@
 // OpenGL includes
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include "GlCamera.h"
 
 double d[9] = {2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
@@ -26,7 +27,7 @@ bool emissive = false;
 bool specular = false;
 
 GLuint texture;
-
+GlCamera camera;
 
 typedef enum {
 	MOTION_NULL=0,
@@ -95,11 +96,11 @@ void camera_rotate(int x, int y)
     Eigen::Vector3f cur, origin;
     cur.x() = x - winSize[2]/2;
     cur.y() = y - winSize[3]/2;
-    cur.z() = sqrt(r - cur.x()*cur.x() - cur.y()*cur.y());
+    cur.z() = sqrt(r*r - cur.x()*cur.x() - cur.y()*cur.y());
 
     origin.x() = origin_x - winSize[2]/2;
-    origin.y() = origin_y - winSize[3]/3;
-    origin.z() = sqrt(r - origin.x()*origin.x() - origin.y()*origin.y());
+    origin.y() = origin_y - winSize[3]/2;
+    origin.z() = sqrt(r*r - origin.x()*origin.x() - origin.y()*origin.y());
 
     std::cerr << "   r: " << r
               << "\norig: " << origin.transpose()
@@ -113,8 +114,17 @@ void camera_rotate(int x, int y)
     angle = axis.norm() / (origin.norm() * cur.norm());
     quat.setFromTwoVectors(origin, cur);
     std::cerr << "angle-axis: " << angle << ", " << axis.transpose() << std::endl;
-    std::cerr << "quat      : " << quat.vec() << std::endl;
-	
+    std::cerr << "quat      : " << quat.vec().transpose() << std::endl;
+    Eigen::Matrix3f mat = quat.matrix();
+    GLfloat m[16];
+    m[0] = mat(0,0); m[5] = mat(0,1); m[9] = mat(0,2); m[13] = d[0];
+    m[1] = mat(1,0); m[6] = mat(1,1); m[10]= mat(1,2); m[14] = d[1];
+    m[3] = mat(2,0); m[7] = mat(2,1); m[11]= mat(2,2); m[15] = d[2];
+    m[4] = 0; m[8] = 0; m[12]= 0; m[16] = 1;
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(m);
+    glutPostRedisplay();
 
 }
 
@@ -126,7 +136,8 @@ void _motion(int x, int y)
 	    camera_rotate(x, y);
 		break;
 	case MOTION_PAN:
-//		camera_pan();
+        if()
+        camera.pan(.01,0,0);
 		break;
 	case MOTION_ZOOM:
 //		camera_zoom();
@@ -160,6 +171,10 @@ void _init()
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_COLOR_MATERIAL);
+    glLoadIdentity(); // Load identity matrix to reset our drawing locations
+    // Camera center, aim at, up vector
+//    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    gluLookAt(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
 }
 
 void _lighting()
@@ -177,12 +192,9 @@ void _display(void)
     _keyOperations();
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Make background red
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the color buffer
-    glLoadIdentity(); // Load identity matrix to reset our drawing locations
-    // Camera center, aim at, up vector
-//    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    gluLookAt(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
+
     glScalef(1.0, 1.0, 1.0);
-    glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
+    glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
     glutSolidCube(2.0f);
     glutSwapBuffers(); // Swap OpenGL buffers and send to monitor
 }

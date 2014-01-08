@@ -135,8 +135,7 @@ void _motion(int x, int y)
         std::cerr << "Rotating view\n";
 	    camera_rotate(x, y);
 		break;
-	case MOTION_PAN:
-        if()
+    case MOTION_PAN:
         camera.pan(.01,0,0);
 		break;
 	case MOTION_ZOOM:

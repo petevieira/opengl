@@ -9,7 +9,7 @@
 #include <GL/freeglut.h>
 #include "GlCamera.h"
 
-double d[9] = {2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+double d[9] = {0, 0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
 bool* keyStates = new bool[256]; // Create array of bools for key states (true=up/false=down)
 bool* keySpecialStates = new bool[256]; // Create array of bools for special key states (true=up/false=down)
@@ -36,8 +36,8 @@ typedef enum {
 	MOTION_ZOOM
 } motion_type_t;
 
-int origin_x = 0;
-int origin_y = 0;
+Eigen::Vector2f mousePos(0,0);
+
 motion_type_t motion_type = MOTION_NULL;
 
 bool movingUp;
@@ -51,10 +51,11 @@ void _keyOperations(void)
 
 void _mouse(int button, int state, int x, int y)
 {
+    std::cerr << "button: " << button << std::endl;
 	// If button pressed, get x,y and toggle motion type
 	if(GLUT_DOWN == state) {
-        origin_x = x;
-        origin_y = y;
+       // origin_x = x;
+       // origin_y = y;
 
 		switch(button) {
 		case GLUT_LEFT_BUTTON:
@@ -69,6 +70,12 @@ void _mouse(int button, int state, int x, int y)
             std::cerr << "now in pan mode\n";
 			motion_type = MOTION_PAN;
 			break;
+        case 3:
+            motion_type = MOTION_ZOOM;
+            break;
+        case 4:
+            motion_type = MOTION_ZOOM;
+            break;
 		}
     }
 	else {
@@ -78,75 +85,31 @@ void _mouse(int button, int state, int x, int y)
 
 }
 
-/**
- * Rotate scene on hemisphere. Project x,y coordinates
- * onto hemisphere and then compute angle between the
- * vectors and axis to rotate about and convert to
- * quaternion. 
- */
-void camera_rotate(int x, int y)
-{
-    GLfloat winSize[4];
-    glGetFloatv(GL_VIEWPORT, winSize);
-    printf("win size: %f, %f, %f, %f\n", winSize[0], winSize[1], winSize[2], winSize[3]);
-    printf("origin: %d, %d\n", origin_x, origin_y);
-    printf("curren: %d, %d\n", x, y);
-
-    float r = sqrt(winSize[2]*winSize[2] + winSize[3]*winSize[3]);
-    Eigen::Vector3f cur, origin;
-    cur.x() = x - winSize[2]/2;
-    cur.y() = y - winSize[3]/2;
-    cur.z() = sqrt(r*r - cur.x()*cur.x() - cur.y()*cur.y());
-
-    origin.x() = origin_x - winSize[2]/2;
-    origin.y() = origin_y - winSize[3]/2;
-    origin.z() = sqrt(r*r - origin.x()*origin.x() - origin.y()*origin.y());
-
-    std::cerr << "   r: " << r
-              << "\norig: " << origin.transpose()
-              << " \ncur: " << cur.transpose() << std::endl;
-
-    Eigen::Quaternionf quat;
-    Eigen::Vector3f axis;
-	float angle;
-    axis = origin.cross(cur);
-
-    angle = axis.norm() / (origin.norm() * cur.norm());
-    quat.setFromTwoVectors(origin, cur);
-    std::cerr << "angle-axis: " << angle << ", " << axis.transpose() << std::endl;
-    std::cerr << "quat      : " << quat.vec().transpose() << std::endl;
-    Eigen::Matrix3f mat = quat.matrix();
-    GLfloat m[16];
-    m[0] = mat(0,0); m[5] = mat(0,1); m[9] = mat(0,2); m[13] = d[0];
-    m[1] = mat(1,0); m[6] = mat(1,1); m[10]= mat(1,2); m[14] = d[1];
-    m[3] = mat(2,0); m[7] = mat(2,1); m[11]= mat(2,2); m[15] = d[2];
-    m[4] = 0; m[8] = 0; m[12]= 0; m[16] = 1;
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(m);
-    glutPostRedisplay();
-
-}
-
 void _motion(int x, int y)
 {
+    float dx=x-mousePos.x();
+    float dy=y-mousePos.y();
 	switch(motion_type) {
 	case MOTION_ROTATE:
         std::cerr << "Rotating view\n";
-	    camera_rotate(x, y);
+        camera.rotate(x, y);
 		break;
     case MOTION_PAN:
-        camera.pan(.01,0,0);
+        std::cerr << "mousePos: " << mousePos.x() << ", " << mousePos.y() << "\n"
+                  << "dx, dy: " << dx << ", " << dy << std::endl;
+        camera.pan(dx,dy,0);
 		break;
 	case MOTION_ZOOM:
-//		camera_zoom();
+        camera.zoom(dy);
         break;
 	}
+    mousePos << x, y;
 }
 
 void _passiveMotion(int x, int y)
 {
-
+    mousePos.x() = x;
+    mousePos.y() = y;
 }
 
 void renderPrimitive(void)
@@ -211,10 +174,51 @@ void _reshape(int width, int height)
 
 void _keyPressed(unsigned char key, int x, int y)
 {
-    if(27 == key) { // escape key
+    switch(key) {
+    case 27: // escape key
         glutDestroyWindow(glutGetWindow());
         exit(0);
+        break;
+    case 'w':
+        std::cerr << "Move up\n";
+        camera.pan(0, -10, 0);
+        break;
+    case 's':
+        camera.pan(0, 10, 0);
+        break;
+    case 'a':
+        camera.pan(-10, 0, 0);
+        break;
+    case 'd':
+        camera.pan(10, 0, 0);
+        break;
+    case '=':
+        camera.zoom(.1);
+        break;
+    case '-':
+        camera.zoom(-.1);
+        break;
+    case 'i':
+        camera.rotate(-1, 0, 0);
+        break;
+    case 'k':
+        camera.rotate(1, 0, 0);
+        break;
+    case 'j':
+        camera.rotate(0, -1, 0);
+        break;
+    case 'l':
+        camera.rotate(0, 1, 0);
+        break;
+    case 'u':
+        camera.rotate(0, 0, 1);
+        break;
+    case 'o':
+        camera.rotate(0, 0, -1);
+        break;
     }
+
+
 }
 
 void _keyReleased(unsigned char key, int x, int y)

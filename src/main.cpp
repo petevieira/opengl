@@ -8,8 +8,9 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "GlCamera.h"
+#include "glutils.h"
 
-double d[9] = {0, 0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+double d[9] = {1, 2, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
 bool* keyStates = new bool[256]; // Create array of bools for key states (true=up/false=down)
 bool* keySpecialStates = new bool[256]; // Create array of bools for special key states (true=up/false=down)
@@ -104,12 +105,15 @@ void _motion(int x, int y)
         break;
 	}
     mousePos << x, y;
+    camera.setMousePosition(mousePos);
+
 }
 
 void _passiveMotion(int x, int y)
 {
     mousePos.x() = x;
     mousePos.y() = y;
+   // std::cerr << "x,y: " << x << ", " << y << std::endl;
 }
 
 void renderPrimitive(void)
@@ -135,8 +139,17 @@ void _init()
     glEnable(GL_COLOR_MATERIAL);
     glLoadIdentity(); // Load identity matrix to reset our drawing locations
     // Camera center, aim at, up vector
-//    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     gluLookAt(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
+    Eigen::Vector3f p, t, u;
+    p << d[0], d[1], d[2];
+    t << d[3], d[4], d[5];
+    u << d[6], d[7], d[8];
+    std::cerr << "Setting camera init pose\n";
+    //camera.setPose(p, t, u);
+    camera.setPose();
+    GLfloat m[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, m);
+    std::cerr << "main_modelview:\n" << glutils::glToMat4(m) << "\n";
 }
 
 void _lighting()
@@ -164,6 +177,7 @@ void _display(void)
 void _reshape(int width, int height)
 {
     glViewport(0, 0, (GLsizei)width, (GLsizei)height); // Set viewport to size of window
+    camera.setViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION); // Switch to projection matrix so we can manipulate scene
     glLoadIdentity(); // Reset projection matrix to identity to avoid artifacts
     // Set field of view, aspect ratio and min and max distances to draw objects
@@ -181,26 +195,35 @@ void _keyPressed(unsigned char key, int x, int y)
         break;
     case 'w':
         std::cerr << "Move up\n";
-        camera.pan(0, -10, 0);
+        camera.pan(0, 1, 0);
         break;
     case 's':
-        camera.pan(0, 10, 0);
+        std::cerr << "Move down\n";
+        camera.pan(0, -1, 0);
         break;
     case 'a':
-        camera.pan(-10, 0, 0);
+        std::cerr << "Move left\n";
+        camera.pan(-1, 0, 0);
         break;
     case 'd':
-        camera.pan(10, 0, 0);
+        std::cerr << "Move right\n";
+        camera.pan(1, 0, 0);
         break;
     case '=':
+        std::cerr << "Zoom out\n";
         camera.zoom(.1);
         break;
     case '-':
+        std::cerr << "Zoom in\n";
         camera.zoom(-.1);
         break;
     case 'i':
-        camera.rotate(-1, 0, 0);
+    {
+        Eigen::AngleAxisf a(5*M_PI/180, Eigen::Vector3f::UnitY());
+        Eigen::Quaternionf q(a);
+        camera.rotate(q);
         break;
+    }
     case 'k':
         camera.rotate(1, 0, 0);
         break;
@@ -216,6 +239,39 @@ void _keyPressed(unsigned char key, int x, int y)
     case 'o':
         camera.rotate(0, 0, -1);
         break;
+    case 'n':
+    {
+        GLfloat m[16];
+        glGetFloatv(GL_MODELVIEW_MATRIX, m);
+        std::cerr << "pre modelview:\n" << glutils::glToMat4(m) << "\n";
+        camera.pan(1, 0, 0);
+        glGetFloatv(GL_MODELVIEW_MATRIX, m);
+        std::cerr << "post modelview:\n" << glutils::glToMat4(m) << "\n";
+        break;
+    }
+    case 'm': {
+        glMatrixMode(GL_MODELVIEW);
+        glTranslatef(0, 0, -.1);
+        glutPostRedisplay();
+        GLfloat m[16];
+        glGetFloatv(GL_MODELVIEW_MATRIX, m);
+        std::cerr << "\nmodelview:\n" << glutils::glToMat4(m);
+        break;
+    }
+    case ',': {
+        glMatrixMode(GL_MODELVIEW);
+        glTranslatef(0, 0, .1);
+        glutPostRedisplay();
+        GLfloat m[16];
+        glGetFloatv(GL_MODELVIEW_MATRIX, m);
+        std::cerr << "modelview:\n" << glutils::glToMat4(m) << "\n";
+        std::cerr << "raw modelview\n"
+                  << m[0] << m[4] << m[8] << m[12] << "\n"
+                  << m[1] << m[5] << m[9] << m[13] << "\n"
+                  << m[2] << m[6] << m[10] << m[14] << "\n"
+                  << m[3] << m[7] << m[11] << m[15] << "\n";
+        break;
+    }
     }
 
 

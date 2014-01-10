@@ -31,12 +31,16 @@ public:
         MOUSE_ROTATE
     };
 
-    Eigen::Vector3f mousePos;
 
     /**
      * \brief Constructor for camera class
      */
     GlCamera();
+
+    Eigen::Isometry3f _modelview, _modelviewInv;
+    Eigen::Matrix4f _projection, _projectionInv;
+    Eigen::Vector3f _position, _target, _up;
+
 
     /**
      * Rotate scene on hemisphere. Project x,y coordinates
@@ -44,6 +48,10 @@ public:
      * vectors and axis to rotate about and convert to
      * quaternion.
      */
+    void rotateAboutWorld(const Eigen::Quaternionf& quat);
+    void rotateAboutPoint(const Eigen::Vector3f& frame, const Eigen::Quaternionf& quat);
+    void rotateAboutFrame(Eigen::Isometry3f& frame, const Eigen::Quaternionf& quat);
+    void rotate(const Eigen::Quaternionf& quat);
     void rotate(int x, int y);
     void rotate(float x, float y, float z);
     void pan(float x, float y, float z);
@@ -51,7 +59,11 @@ public:
     void zoom(float factor);
     void setCameraType(CameraType cameraType);
     void setViewport(int x, int y, int w, int h);
-
+    void setPose(const Eigen::Isometry3f &pose);
+    void setPose();
+    void setPose(const Eigen::Vector3f& position, const Eigen::Vector3f& target, const Eigen::Vector3f& up);
+    void setMousePosition(const Eigen::Vector2f &position);
+    void updateView();
 
 private:
 
@@ -69,13 +81,18 @@ private:
     Viewport _viewport;
     CameraType _cameraType;
     Eigen::Vector2f _mouseXY;
-    Eigen::Vector3f _eye, _center, _up;
 
     float _minSize, _maxSize;
     float _minXRot, _maxXRot;
     float _minYRot, _maxYRot;
 
     Eigen::Vector3f hemisphereCoords(int x, int y) const;
+
+    const Eigen::Isometry3f& getMatrix(MatrixType matrix_type);
+    void loadMatrix(MatrixType matrix_type);
+    const Eigen::Matrix4f& projection() const { return _projection; }
+    const Eigen::Isometry3f& modelview() const { return _modelview; }
+
 };
 
 #endif // GLCAMERA_H

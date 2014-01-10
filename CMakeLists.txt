@@ -26,6 +26,8 @@ set(OPENGL_LIBRARIES glut GLU GL)
 include_directories("include")
 
 # Add executables
+link_libraries(${OPENGL_LIBRARIES} glutils glcamera)
+add_library(glutils "src/glutils.cpp" "include/glutils.h")
 add_library(glcamera "src/GlCamera.cpp" "include/GlCamera.h")
 add_executable(main "src/main.cpp")
-target_link_libraries(main ${OPENGL_LIBRARIES} glcamera)
+#target_link_libraries(main ${OPENGL_LIBRARIES} glcamera)

@@ -10,7 +10,7 @@
 #include "GlCamera.h"
 #include "glutils.h"
 
-double d[9] = {1, 2, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+double d[9] = {0, 2, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
 bool* keyStates = new bool[256]; // Create array of bools for key states (true=up/false=down)
 bool* keySpecialStates = new bool[256]; // Create array of bools for special key states (true=up/false=down)
@@ -44,6 +44,8 @@ motion_type_t motion_type = MOTION_NULL;
 bool movingUp;
 float yLocation = 0.0f;
 float yRotAngle = 0.0f;
+
+
 
 void _keyOperations(void)
 {
@@ -113,7 +115,7 @@ void _passiveMotion(int x, int y)
 {
     mousePos.x() = x;
     mousePos.y() = y;
-   // std::cerr << "x,y: " << x << ", " << y << std::endl;
+    std::cerr << "x,y: " << camera.hemisphereCoords(x, y).transpose() << std::endl;
 }
 
 void renderPrimitive(void)
@@ -152,13 +154,6 @@ void _init()
     std::cerr << "main_modelview:\n" << glutils::glToMat4(m) << "\n";
 }
 
-void _lighting()
-{
-    glLightfv(GL_LIGHT0, GL_SPECULAR, whiteSpecularLight);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, blackAmbientLight);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuseLight);
-}
-
 void _display(void)
 {
     glEnable(GL_BLEND);
@@ -170,8 +165,13 @@ void _display(void)
 
     glScalef(1.0, 1.0, 1.0);
     glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-    glutSolidCube(2.0f);
+    //glutSolidCube(2.0f);
+    renderPrimitive();
     glutSwapBuffers(); // Swap OpenGL buffers and send to monitor
+    GLenum err = glGetError();
+    if(err != GL_NO_ERROR) {
+        std::cerr << "Error: " << gluErrorString(err) << std::endl;
+    }
 }
 
 void _reshape(int width, int height)
@@ -210,16 +210,16 @@ void _keyPressed(unsigned char key, int x, int y)
         camera.pan(1, 0, 0);
         break;
     case '=':
-        std::cerr << "Zoom out\n";
+        std::cerr << "Zoom in\n";
         camera.zoom(.1);
         break;
     case '-':
-        std::cerr << "Zoom in\n";
+        std::cerr << "Zoom out\n";
         camera.zoom(-.1);
         break;
     case 'i':
     {
-        Eigen::AngleAxisf a(5*M_PI/180, Eigen::Vector3f::UnitY());
+        Eigen::AngleAxisf a(5*M_PI/180, Eigen::Vector3f::UnitX());
         Eigen::Quaternionf q(a);
         camera.rotate(q);
         break;

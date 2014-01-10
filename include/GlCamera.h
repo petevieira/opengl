@@ -64,6 +64,8 @@ public:
     void setPose(const Eigen::Vector3f& position, const Eigen::Vector3f& target, const Eigen::Vector3f& up);
     void setMousePosition(const Eigen::Vector2f &position);
     void updateView();
+    Eigen::Vector3f hemisphereCoords(int x, int y) const;
+
 
 private:
 
@@ -86,7 +88,6 @@ private:
     float _minXRot, _maxXRot;
     float _minYRot, _maxYRot;
 
-    Eigen::Vector3f hemisphereCoords(int x, int y) const;
 
     const Eigen::Isometry3f& getMatrix(MatrixType matrix_type);
     void loadMatrix(MatrixType matrix_type);

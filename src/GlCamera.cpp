@@ -35,20 +35,23 @@ void GlCamera::rotate(int x, int y)
 
     glMatrixMode(GL_MODELVIEW);
     rotateAboutWorld(quat);
-    updateView();
+   // updateView();
 }
 
 void GlCamera::rotate(const Eigen::Quaternionf& quat)
 {
-    glMatrixMode(GL_MODELVIEW);
-    rotateAboutWorld(quat);
-    updateView();
+    _modelview.rotate(quat);
+    loadMatrix(MATRIX_MODELVIEW);
+    glutPostRedisplay();
 }
 
 void GlCamera::rotateAboutWorld(const Eigen::Quaternionf &quat)
 {
-    Eigen::Isometry3f world = Eigen::Isometry3f::Identity();
-    rotateAboutFrame(world, quat);
+//    Eigen::Isometry3f world = Eigen::Isometry3f::Identity();
+//    rotateAboutFrame(world, quat);
+    _modelview.rotate(quat);
+    loadMatrix(MATRIX_MODELVIEW);
+    glutPostRedisplay();
 }
 
 void GlCamera::rotateAboutFrame(Eigen::Isometry3f& frame, const Eigen::Quaternionf& quat)
@@ -69,8 +72,6 @@ void GlCamera::rotateAboutPoint(const Eigen::Vector3f& frame, const Eigen::Quate
 
 void GlCamera::rotate(float x, float y, float z)
 {
-    glMatrixMode(GL_MODELVIEW);
-
     glRotatef(x, 1, 0, 0);
     glRotatef(y, 0, 1, 0);
     glRotatef(z, 0, 0, 1);
@@ -84,18 +85,14 @@ void GlCamera::pan(float x, float y, float z)
 
 void GlCamera::pan(const Eigen::Vector3f& p)
 {
-//    glMatrixMode(GL_MODELVIEW);
-//    _position += p/100;
-//    _target += p/100;
-//    updateView();
-    _modelview.translate(p);
+    _modelview.pretranslate(p);
     loadMatrix(MATRIX_MODELVIEW);
     glutPostRedisplay();
 }
 
 void GlCamera::zoom(float factor)
 {
-    _modelview.translate(Eigen::Vector3f(0, 0, factor));
+    _modelview.pretranslate(Eigen::Vector3f(0, 0, factor));
     loadMatrix(MATRIX_MODELVIEW);
     glutPostRedisplay();
 
@@ -151,6 +148,7 @@ void GlCamera::setPose()
     glGetFloatv(GL_MODELVIEW_MATRIX, m);
     _modelview = glutils::glToMat4(m);
     std::cerr << "_modelview:\n" << _modelview.matrix() << std::endl;
+    std::cerr << "_modelviewInv:\n" << _modelview.inverse().matrix() << std::endl;
 }
 
 
@@ -184,7 +182,7 @@ Eigen::Vector3f GlCamera::hemisphereCoords(int x, int y) const
     // is half the diagonal of the viewport
     float r = _viewport.diagonal/2;
     ray.x() = x - _viewport.center.x();
-    ray.y() = y - _viewport.center.y();
+    ray.y() = _viewport.center.y() - y;
     ray.z() = sqrt(r*r - ray.x()*ray.x() - ray.y()*ray.y());
 
     return ray;
@@ -195,6 +193,8 @@ void GlCamera::loadMatrix(MatrixType matrix_type)
     GLfloat glMat[16];
     glutils::iso3ToGl(getMatrix(matrix_type), glMat);
     glutils::loadMatrix(glMat);
+    std::cerr << "modelview\n" << _modelview.matrix() << std::endl;
+    std::cerr << "modelviewInv\n" << _modelview.inverse().matrix() << "\n\n";
 }
 
 const Eigen::Isometry3f& GlCamera::getMatrix(MatrixType matrix_type)
